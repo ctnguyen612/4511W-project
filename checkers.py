@@ -23,7 +23,8 @@ WEIGHTS_SAVE_FREQ = 50
 WRITE_FREQ = 100
 TEST_FREQ = 100
 TEST_GAMES = 100
-NOTIFY_FREQ = 50
+# NOTIFY_FREQ = 50
+NOTIFY_FREQ = 1
 CHANGE_AGENT_FREQ = 10
 
 class GameState:
@@ -212,15 +213,8 @@ def load_agent(agent_type, agent_learn, weights=None, depth=3):
         return KeyBoardAgent()
     elif agent_type == 'ab':
         return AlphaBetaAgent(depth=depth)
-    elif agent_type == 'ql':
-        is_learning_agent = True if agent_learn else False
-        return QLearningAgent(is_learning_agent=is_learning_agent, weights=weights)
-    elif agent_type == 'sl':
-        is_learning_agent = True if agent_learn else False
-        return SarsaLearningAgent(is_learning_agent=is_learning_agent, weights=weights)
-    elif agent_type == 'ssl':
-        is_learning_agent = True if agent_learn else False
-        return SarsaSoftmaxAgent(is_learning_agent=is_learning_agent, weights=weights)
+    elif agent_type == 'lab':
+        return LimitedAlphaBetaAgent(depth=depth)
     else:
         raise Exception('Invalid agent ' + str(agent_type))
 
@@ -243,22 +237,25 @@ def read_command(argv):
     """
     parser = OptionParser(usage_str)
 
+		# CTN_TODO: set num games to run here
     parser.add_option('-n', '--numGames', dest='num_games', type='int',
-                      help=default('the number of GAMES to play'), metavar='GAMES', default=1)
+                      help=default('the number of GAMES to play'), metavar='GAMES', default=5)
 
     # k for keyboard agent
     # ab for alphabeta agent
     # rl for reinforcement learning agent
+		# CTN_TODO: set first agent default here
     parser.add_option('-f', '--agentFirstType', dest='first_agent', type='string',
-                      help=default('the first agent of game'), default='k')
+                      help=default('the first agent of game'), default='ab')
 
     parser.add_option('-l', '--agentFirstLearn', dest='first_agent_learn', type='int',
                       help=default('the first agent of game is learning ' +
                         '(only applicable for learning agents)'), default=1)
 
 
+		# CTN_TODO: set second agent default here
     parser.add_option('-s', '--agentSecondType', dest='second_agent', type='string',
-                      help=default('the second agent of game'), default='k')
+                      help=default('the second agent of game'), default='lab')
 
     parser.add_option('-d', '--agentsecondLearn', dest='second_agent_learn', type='int',
                       help=default('the second agent of game is learning ' +
@@ -331,7 +328,8 @@ def read_command(argv):
 
     args['update_param'] = options.update_param
 
-    args['quiet'] = True if options.quiet else False
+    # args['quiet'] = True if options.quiet else False
+    args['quiet'] = True
 
     args['first_file_name'] = options.first_save
     args['second_file_name'] = options.second_save
@@ -376,22 +374,6 @@ def multiprocess(rules, first_agent, second_agent, first_agent_turn, quiet=True)
         val = result.get()
         num_moves, game_state = val[0], val[1]
 
-        if first_agent.has_been_learning_agent:
-            if game_state.max_moves_done:
-                result_f[0].append(0.5)
-            else:
-                result_f[0].append(1 if game_state.is_first_agent_win() else 0)
-
-            result_f[1].append(num_moves)
-
-        if second_agent.has_been_learning_agent:
-            if game_state.max_moves_done:
-                result_s[0].append(0.5)
-            else:
-                result_s[0].append(1 if game_state.is_second_agent_win() else 0)
-
-            result_s[1].append(num_moves)
-
     return result_f, result_s
 
 
@@ -414,33 +396,6 @@ def run_games(first_agent, second_agent, first_agent_turn, num_games, update_par
 
     try:
         write_str = "num_moves,win,reward,max_q_value\n"
-        if first_agent.is_learning_agent:
-            first_f = open_file(first_file_name, header=write_str)
-
-            first_w_deq = deque()
-
-            first_f_res = open_file(first_result_file_name)
-            first_writer_res = csv.writer(first_f_res, lineterminator='\n')
-
-            first_f_m_res = open_file(first_m_result_file_name)
-            first_writer_m_res = csv.writer(first_f_m_res, lineterminator='\n')
-
-            first_f_str = ""
-            first_writer_w_list = []
-
-        if second_agent.is_learning_agent:
-            second_f = open_file(second_file_name, header=write_str)
-
-            second_w_deq = deque()
-
-            second_f_res = open_file(second_result_file_name)
-            second_writer_res = csv.writer(second_f_res, lineterminator='\n')
-
-            second_f_m_res = open_file(second_m_result_file_name)
-            second_writer_m_res = csv.writer(second_f_m_res, lineterminator='\n')
-
-            second_f_str = ""
-            second_writer_w_list = []
 
         # learn weights
         # save weights
@@ -455,60 +410,11 @@ def run_games(first_agent, second_agent, first_agent_turn, num_games, update_par
 
             rules = ClassicGameRules()
 
-            if first_agent.has_been_learning_agent:
-                first_agent.start_learning()
-
-            if second_agent.has_been_learning_agent:
-                second_agent.start_learning()
-
             game = rules.new_game(first_agent, second_agent, first_agent_turn, quiet=quiet)
 
             num_moves, game_state = game.run()
 
-            if first_agent.is_learning_agent:
-                reward = first_agent.episode_rewards
-                win = 1 if game_state.is_first_agent_win() else 0
-
-                init_state = GameState(the_player_turn=first_agent_turn)
-                max_q_value = first_agent.compute_value_from_q_values(init_state)
-
-                w_str = str(num_moves) + "," + str(win) + "," + str(reward) + "," + str(max_q_value) + "\n"
-                first_f_str += w_str
-
-                if (i+1) % WEIGHTS_SAVE_FREQ == 0:
-                    if len(first_w_deq) != 0 and len(first_w_deq) % NUM_WEIGHTS_REM == 0:
-                        first_w_deq.popleft()
-                    first_w_deq.append(np.array(first_agent.weights))
-
-                if (i+1) % WRITE_FREQ == 0:
-                    first_f.write(first_f_str)
-                    first_f_str = ""
-
-            if second_agent.is_learning_agent:
-                reward = second_agent.episode_rewards
-                win = 1 if game_state.is_second_agent_win() else 0
-
-                init_state = GameState(the_player_turn=first_agent_turn)
-                max_q_value = second_agent.compute_value_from_q_values(init_state)
-
-                w_str = str(num_moves) + "," + str(win) + "," + str(reward) + "," + str(max_q_value) + "\n"
-                second_f_str += w_str
-
-                if (i+1) % WEIGHTS_SAVE_FREQ == 0:
-                    if len(second_w_deq) != 0 and len(second_w_deq) % NUM_WEIGHTS_REM == 0:
-                        second_w_deq.popleft()
-                    second_w_deq.append(np.array(second_agent.weights))
-
-                if (i+1) % WRITE_FREQ == 0:
-                    second_f.write(second_f_str)
-                    second_f_str = ""
-
             if (i+1) % TEST_FREQ == 0:
-                if first_agent.is_learning_agent:
-                    first_agent.stop_learning()
-
-                if second_agent.is_learning_agent:
-                    second_agent.stop_learning()
 
                 result_f = []
                 result_s = []
@@ -517,50 +423,10 @@ def run_games(first_agent, second_agent, first_agent_turn, num_games, update_par
                 result_f, result_s = \
                 multiprocess(rules, first_agent, second_agent, first_agent_turn, quiet=True)
 
-                if first_agent.has_been_learning_agent:
-                    first_writer_res.writerow(result_f[0])
-                    first_writer_m_res.writerow(result_f[1])
-
-                if second_agent.has_been_learning_agent:
-                    second_writer_res.writerow(result_s[0])
-                    second_writer_m_res.writerow(result_s[1])
-
-            if first_agent.has_been_learning_agent and play_against_self:
-                if (i+1) % CHANGE_AGENT_FREQ == 0:
-                    weights = first_w_deq[-1]
-                    second_agent = QLearningAgent(weights=weights, is_learning_agent=False)
-
-            if first_agent.has_been_learning_agent and update_param:
-                first_agent.update_parameters(update_param, (i+1))
-
-            if second_agent.has_been_learning_agent and update_param:
-                second_agent.update_parameters(update_param, (i+1))
-
 
     except Exception as e:
         print(sys.exc_info()[0])
         traceback.print_tb(e.__traceback__)
-
-    finally:
-        if first_agent.has_been_learning_agent:
-            first_f.close()
-            first_f_res.close()
-            first_f_m_res.close()
-
-            first_f_w = open_file(first_weights_file_name)
-            first_writer_w = csv.writer(first_f_w, lineterminator='\n')
-            first_writer_w.writerows(first_w_deq)
-            first_f_w.close()
-
-        if second_agent.has_been_learning_agent:
-            second_f.close()
-            second_f_res.close()
-            second_f_m_res.close()
-
-            second_f_w = open_file(second_weights_file_name)
-            second_writer_w = csv.writer(second_f_w, lineterminator='\n')
-            second_writer_w.writerows(second_w_deq)
-            second_f_w.close()
 
 
 if __name__ == '__main__':

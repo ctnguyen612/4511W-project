@@ -470,17 +470,6 @@ class Game:
 
         learning_agents = []
 
-        if self.first_agent.is_learning_agent:
-            learning_agents.append(self.first_agent)
-
-        if self.second_agent.is_learning_agent:
-            learning_agents.append(self.second_agent)
-
-        # inform learning agents about new episode start
-        for learning_agent in learning_agents:
-            learning_agent.start_episode()
-
-
         action = None
         num_moves = 0
         while not game_state.is_game_over() and num_moves < self.rules.max_moves:
@@ -513,15 +502,5 @@ class Game:
 
         if num_moves >= self.rules.max_moves:
             game_state.set_max_moves_done()
-
-        # after the game is over, tell learning agents to learn accordingly
-
-        # inform learning agents about new episode end
-        for learning_agent in learning_agents:
-            learning_agent.observation_function(game_state)
-            learning_agent.stop_episode()
-
-        # game_state.print_board()
-        # print(num_moves)
 
         return num_moves, game_state
