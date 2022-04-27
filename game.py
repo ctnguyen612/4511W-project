@@ -450,7 +450,7 @@ class Game:
     A class to control a game by asking for actions from agents while following game rules.
     """
 
-    def __init__(self, first_agent, second_agent, game_state, rules):
+    def __init__(self, player_moves, first_agent, second_agent, game_state, rules):
         """
         first_agent: first agent which corresponds to board.player_turn = True
         second_agent: second agent other than first agent
@@ -462,14 +462,13 @@ class Game:
         self.second_agent = second_agent
         self.game_state = game_state
         self.rules = rules
+        self.player_moves = player_moves
 
 
     def run(self):
 
         quiet = self.rules.quiet
         game_state = self.game_state
-
-        learning_agents = []
 
         action = None
         num_moves = 0
@@ -492,6 +491,7 @@ class Game:
 
             game_state = self.game_state
 
+            self.player_moves[type(active_agent).__name__] += 1
             num_moves += 1
             # input()
 

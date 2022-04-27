@@ -2,6 +2,7 @@
 This file contains code to handle game play
 """
 
+from cgi import test
 import copy
 import sys
 import csv
@@ -26,6 +27,9 @@ TEST_GAMES = 100
 # NOTIFY_FREQ = 50
 NOTIFY_FREQ = 1
 CHANGE_AGENT_FREQ = 10
+
+NUM_GAMES = 30
+TEST_DEPTHS = [CONTROL_BOT_DEPTH] * NUM_GAMES
 
 class GameState:
     """
@@ -193,11 +197,11 @@ class ClassicGameRules:
         self.max_moves = max_moves
         self.quiet = False
 
-    def new_game(self, first_agent, second_agent, first_agent_turn, quiet=False):
+    def new_game(self, first_agent, second_agent, first_agent_turn, player_moves, quiet=False):
         init_state = GameState(the_player_turn=first_agent_turn)
 
         self.quiet = quiet
-        game = Game(first_agent, second_agent, init_state, self)
+        game = Game(player_moves, first_agent, second_agent, init_state, self)
 
         return game
 
@@ -239,7 +243,7 @@ def read_command(argv):
 
 		# CTN_TODO: set num games to run here
     parser.add_option('-n', '--numGames', dest='num_games', type='int',
-                      help=default('the number of GAMES to play'), metavar='GAMES', default=5)
+                      help=default('the number of GAMES to play'), metavar='GAMES', default=NUM_GAMES)
 
     # k for keyboard agent
     # ab for alphabeta agent
@@ -386,7 +390,7 @@ def run_games(first_agent, second_agent, first_agent_turn, num_games, update_par
                 first_m_result_file_name="./data/first_m_results",
                 second_m_result_file_name="./data/second_m_results", 
                 play_against_self=False,
-                results={}):
+                results=[]):
     """
     first_agent: instance of Agent which reflects first agent
     second_agent: instance of Agent which reflects second agent
@@ -411,18 +415,31 @@ def run_games(first_agent, second_agent, first_agent_turn, num_games, update_par
 
             rules = ClassicGameRules()
 
-            game = rules.new_game(first_agent, second_agent, first_agent_turn, quiet=quiet)
+            next_agent = load_agent('lab', None, None, TEST_DEPTHS[i])
+            player_moves = {
+                type(first_agent).__name__: 0,
+                type(next_agent).__name__: 0
+            }
+
+            game = rules.new_game(first_agent, next_agent, first_agent_turn, player_moves, quiet=quiet)
+
+            # print(f'running test bot with depth {TEST_DEPTHS[i]}')
 
             num_moves, game_state = game.run()
+
+            game_result = [f'Test depth {TEST_DEPTHS[i]}']
             if game_state.is_first_agent_win():
-              print('winner: control bot')
-              results['control_bot'] += 1
+                game_result.append('control')
+                results['control'] += 1
             elif game_state.is_second_agent_win():
-              print('winner: variable bot')
-              results['variable_bot'] += 1
+                game_result.append('test')
+                results['test'] += 1
             else:
-              print('draw')
-              results['draw'] += 1
+                game_result.append('draw')
+                results['draw'] += 1
+
+            game_result.append(max(player_moves[type(first_agent).__name__], player_moves[type(next_agent).__name__]))
+            results['individual'].append(game_result)
 
             if (i+1) % TEST_FREQ == 0:
 
@@ -471,10 +488,17 @@ if __name__ == '__main__':
     start_time = time.time()
     args = read_command(sys.argv[1:])
     results = {
-      'control_bot': 0,
-      'variable_bot': 0,
-      'draw': 0,
+        'control': 0,
+        'test': 0,
+        'draw': 0,
+        'individual': [],
     }
+
     run_games(**args, results=results)
-    print(results)
+
+    control_rate = float(results['control']) / len(results['individual'])
+    test_rate = float(results['test']) / len(results['individual'])
+    draw_rate = float(results['draw']) / len(results['individual'])
+
+    print(f'----------rates at depth {TEST_DEPTHS[0]} with threshold {THRESHOLD}: {control_rate} {test_rate} {draw_rate}----------')
     print(time.time() - start_time)
