@@ -385,7 +385,8 @@ def run_games(first_agent, second_agent, first_agent_turn, num_games, update_par
                 second_result_file_name="./data/second_results", 
                 first_m_result_file_name="./data/first_m_results",
                 second_m_result_file_name="./data/second_m_results", 
-                play_against_self=False):
+                play_against_self=False,
+                results={}):
     """
     first_agent: instance of Agent which reflects first agent
     second_agent: instance of Agent which reflects second agent
@@ -413,6 +414,15 @@ def run_games(first_agent, second_agent, first_agent_turn, num_games, update_par
             game = rules.new_game(first_agent, second_agent, first_agent_turn, quiet=quiet)
 
             num_moves, game_state = game.run()
+            if game_state.is_first_agent_win():
+              print('winner: control bot')
+              results['control_bot'] += 1
+            elif game_state.is_second_agent_win():
+              print('winner: variable bot')
+              results['variable_bot'] += 1
+            else:
+              print('draw')
+              results['draw'] += 1
 
             if (i+1) % TEST_FREQ == 0:
 
@@ -460,5 +470,11 @@ if __name__ == '__main__':
 
     start_time = time.time()
     args = read_command(sys.argv[1:])
-    run_games(**args)
+    results = {
+      'control_bot': 0,
+      'variable_bot': 0,
+      'draw': 0,
+    }
+    run_games(**args, results=results)
+    print(results)
     print(time.time() - start_time)

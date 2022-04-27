@@ -8,6 +8,9 @@ import random
 from game import CHECKERS_FEATURE_COUNT, checkers_features, checkers_reward
 import numpy as np
 
+CONTROL_BOT_DEPTH = 5
+VARIABLE_BOT_DEPTH = 4
+
 class Agent(ABC):
 
     def __init__(self, is_learning_agent=False):
@@ -27,7 +30,8 @@ class AlphaBetaAgent(Agent):
 
     def __init__(self, depth):
         Agent.__init__(self, is_learning_agent=False)
-        self.depth = depth
+        # self.depth = depth
+        self.depth = CONTROL_BOT_DEPTH
 
     def evaluation_function(self, state, agent=True):
         """
@@ -123,7 +127,8 @@ class LimitedAlphaBetaAgent(Agent):
 
     def __init__(self, depth):
         Agent.__init__(self, is_learning_agent=False)
-        self.depth = depth
+        # self.depth = depth
+        self.depth = VARIABLE_BOT_DEPTH
 
     def evaluation_function(self, state, agent=True):
         """
