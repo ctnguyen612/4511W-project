@@ -251,6 +251,7 @@ class Board:
         which players turn it is.
         """
 
+        # move: [ [x,y], [x,y] ]
         if abs(move[0][0] - move[1][0]) == 2:
             for j in range(len(move) - 1):
                 if move[j][0] % 2 == 1:
@@ -477,11 +478,6 @@ class Game:
             # print('number of pieces', game_state.get_pieces_and_kings(True), game_state.get_pieces_and_kings(False))
             active_agent = self.first_agent if game_state.is_first_agent_turn() else self.second_agent
 
-            if active_agent.is_learning_agent:
-                action = active_agent.observation_function(game_state)
-            else:
-                action = None
-
             if not quiet:
                 game_state.print_board()
                 print('Current turn is of agent: ' + str(game_state.player_symbol(game_state.player_info())))
@@ -489,8 +485,7 @@ class Game:
                 # game_state.num_attacks()
                 input()
 
-            if action is None:
-                action = active_agent.get_action(game_state)
+            action = active_agent.get_action(game_state)
 
             next_game_state = game_state.generate_successor(action)
             self.game_state = next_game_state

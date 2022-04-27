@@ -8,8 +8,8 @@ import random
 from game import CHECKERS_FEATURE_COUNT, checkers_features, checkers_reward
 import numpy as np
 
-CONTROL_BOT_DEPTH = 5
-VARIABLE_BOT_DEPTH = 4
+CONTROL_BOT_DEPTH = 3
+VARIABLE_BOT_DEPTH = 2
 
 class Agent(ABC):
 
@@ -162,7 +162,7 @@ class LimitedAlphaBetaAgent(Agent):
 
             depth += 1
             if depth == self.depth or state.is_game_over():
-                return [None, self.evaluation_function(state, max_agent)]
+                return [None, random.randrange(-5, 5) * self.evaluation_function(state, max_agent)]
             elif agent == 0:
                 return maximum(state, depth, agent, A, B)
             else:
@@ -180,7 +180,6 @@ class LimitedAlphaBetaAgent(Agent):
                 val = mini_max(current, depth, agent + 1, A, B)
 
                 check = val[1]
-
                 if check > output[1]:
                     output = [action, check]
 
@@ -200,7 +199,7 @@ class LimitedAlphaBetaAgent(Agent):
 
             for action in actions_list:
                 current = state.generate_successor(action)
-                val = mini_max(current, depth, agent+1, A, B)
+                val = mini_max(current, depth, agent + 1, A, B)
 
                 check = val[1]
 
