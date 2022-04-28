@@ -9,7 +9,7 @@ from game import CHECKERS_FEATURE_COUNT, checkers_features, checkers_reward
 import numpy as np
 
 CONTROL_BOT_DEPTH = 3
-THRESHOLD = 200
+THRESHOLD = 6
 
 class Agent(ABC):
 
@@ -52,6 +52,7 @@ class LimitedAlphaBetaAgent(Agent):
             return -500
 
         pieces_and_kings = state.get_pieces_and_kings()
+        # evaluation function: # this player pawns + 2 * # this player kings - (# other player pawns + 2 * # other player kings)
         return pieces_and_kings[agent_ind] + 2 * pieces_and_kings[agent_ind + 2] - \
         (pieces_and_kings[other_ind] + 2 * pieces_and_kings[other_ind + 2])
 
@@ -60,18 +61,16 @@ class LimitedAlphaBetaAgent(Agent):
         def mini_max(state, depth, agent, A, B):
             if agent >= state.get_num_agents():
                 agent = 0
-            print(agent)
 
             depth += 1
             if depth == self.depth or state.is_game_over():
-                abs_difference = abs(A - B)
-                similar_values = abs_difference > 0 and abs_difference < THRESHOLD
-                # if abs_difference > 0 and abs_difference != float("inf"):
-                #     print(abs_difference)
+                # abs_difference = abs(A - B)
+                # similar_values = abs_difference > 0 and abs_difference < THRESHOLD
 
-                multiplier = random.randrange(-100, 100) / 100 if similar_values else 1
+                # multiplier = random.randrange(-100, 100) / 100 if similar_values else 1
 
-                return [None, multiplier * self.evaluation_function(state, max_agent)]
+                # return [None, multiplier * self.evaluation_function(state, max_agent)]
+                return [None, self.evaluation_function(state, max_agent)]
             elif agent == 0:
                 return maximum(state, depth, agent, A, B)
             else:
@@ -92,6 +91,9 @@ class LimitedAlphaBetaAgent(Agent):
                 if check > output[1]:
                     output = [action, check]
 
+                if abs(check - B) < THRESHOLD:
+                    check *= random.randrange(-100, 100) / 100
+                    
                 if check > B:
                     return [action, check]
 
@@ -115,6 +117,9 @@ class LimitedAlphaBetaAgent(Agent):
                 if check < output[1]:
                     output = [action, check]
 
+                if abs(check - A) < THRESHOLD:
+                    check *= random.randrange(-100, 100) / 100
+                    
                 if check < A:
                     return [action, check]
 

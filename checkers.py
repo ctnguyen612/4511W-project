@@ -28,7 +28,7 @@ TEST_GAMES = 100
 NOTIFY_FREQ = 1
 CHANGE_AGENT_FREQ = 10
 
-NUM_GAMES = 30
+NUM_GAMES = 5
 TEST_DEPTHS = [CONTROL_BOT_DEPTH] * NUM_GAMES
 
 class GameState:
@@ -500,5 +500,8 @@ if __name__ == '__main__':
     test_rate = float(results['test']) / len(results['individual'])
     draw_rate = float(results['draw']) / len(results['individual'])
 
-    print(f'----------rates at depth {TEST_DEPTHS[0]} with threshold {THRESHOLD}: {control_rate} {test_rate} {draw_rate}----------')
+    print(f'----------rates at depth {TEST_DEPTHS[0]} with threshold {THRESHOLD}:')
+    print(f'control: {control_rate}')
+    print(f'test: {test_rate}')
+    print(f'draw: {draw_rate}')
     print(time.time() - start_time)
