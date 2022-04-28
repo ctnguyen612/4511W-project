@@ -18,6 +18,8 @@ from agents import *
 
 import numpy as np
 
+from functools import reduce
+
 # number of weights to remember
 NUM_WEIGHTS_REM = 5
 WEIGHTS_SAVE_FREQ = 50
@@ -28,7 +30,7 @@ TEST_GAMES = 100
 NOTIFY_FREQ = 1
 CHANGE_AGENT_FREQ = 10
 
-NUM_GAMES = 5
+NUM_GAMES = 30
 TEST_DEPTHS = [CONTROL_BOT_DEPTH] * NUM_GAMES
 
 class GameState:
@@ -427,19 +429,14 @@ def run_games(first_agent, second_agent, first_agent_turn, num_games, update_par
 
             num_moves, game_state = game.run()
 
-            game_result = [f'Test depth {TEST_DEPTHS[i]}']
             if game_state.is_first_agent_win():
-                game_result.append('control')
                 results['control'] += 1
             elif game_state.is_second_agent_win():
-                game_result.append('test')
                 results['test'] += 1
             else:
-                game_result.append('draw')
                 results['draw'] += 1
 
-            game_result.append(max(player_moves[type(first_agent).__name__], player_moves[type(next_agent).__name__]))
-            results['individual'].append(game_result)
+            results['individual'].append(max(player_moves[type(first_agent).__name__], player_moves[type(next_agent).__name__]))
 
             if (i+1) % TEST_FREQ == 0:
 
@@ -499,9 +496,11 @@ if __name__ == '__main__':
     control_rate = float(results['control']) / len(results['individual'])
     test_rate = float(results['test']) / len(results['individual'])
     draw_rate = float(results['draw']) / len(results['individual'])
+    avg_num_moves = sum(results['individual']) / len(results['individual'])
 
     print(f'----------rates at depth {TEST_DEPTHS[0]} with threshold {THRESHOLD}:')
     print(f'control: {control_rate}')
     print(f'test: {test_rate}')
     print(f'draw: {draw_rate}')
+    print(f'# moves to win: {avg_num_moves}')
     print(time.time() - start_time)

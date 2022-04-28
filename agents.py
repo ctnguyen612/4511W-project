@@ -8,8 +8,9 @@ import random
 from game import CHECKERS_FEATURE_COUNT, checkers_features, checkers_reward
 import numpy as np
 
-CONTROL_BOT_DEPTH = 3
-THRESHOLD = 6
+CONTROL_BOT_DEPTH = 4
+THRESHOLD = 7
+random.seed(100)
 
 class Agent(ABC):
 
@@ -52,7 +53,6 @@ class LimitedAlphaBetaAgent(Agent):
             return -500
 
         pieces_and_kings = state.get_pieces_and_kings()
-        # evaluation function: # this player pawns + 2 * # this player kings - (# other player pawns + 2 * # other player kings)
         return pieces_and_kings[agent_ind] + 2 * pieces_and_kings[agent_ind + 2] - \
         (pieces_and_kings[other_ind] + 2 * pieces_and_kings[other_ind + 2])
 
@@ -92,7 +92,7 @@ class LimitedAlphaBetaAgent(Agent):
                     output = [action, check]
 
                 if abs(check - B) < THRESHOLD:
-                    check *= random.randrange(-100, 100) / 100
+                    check *= random.randrange(0, 1000) / 100
                     
                 if check > B:
                     return [action, check]
@@ -118,7 +118,7 @@ class LimitedAlphaBetaAgent(Agent):
                     output = [action, check]
 
                 if abs(check - A) < THRESHOLD:
-                    check *= random.randrange(-100, 100) / 100
+                    check *= random.randrange(0, 1000) / 100
                     
                 if check < A:
                     return [action, check]
