@@ -8,8 +8,8 @@ import random
 from game import CHECKERS_FEATURE_COUNT, checkers_features, checkers_reward
 import numpy as np
 
-CONTROL_BOT_DEPTH = 4
-THRESHOLD = 7
+CONTROL_BOT_DEPTH = 3
+THRESHOLD = 1
 random.seed(100)
 
 class Agent(ABC):
@@ -68,9 +68,12 @@ class LimitedAlphaBetaAgent(Agent):
                 # similar_values = abs_difference > 0 and abs_difference < THRESHOLD
 
                 # multiplier = random.randrange(-100, 100) / 100 if similar_values else 1
+                compare_with = B if agent == 0 else A
+                val = self.evaluation_function(state, max_agent)
+                multiplier = random.randrange(0, 200) / 100 if abs(compare_with - val) < THRESHOLD else 1
 
                 # return [None, multiplier * self.evaluation_function(state, max_agent)]
-                return [None, self.evaluation_function(state, max_agent)]
+                return [None, val * multiplier]
             elif agent == 0:
                 return maximum(state, depth, agent, A, B)
             else:
@@ -91,8 +94,8 @@ class LimitedAlphaBetaAgent(Agent):
                 if check > output[1]:
                     output = [action, check]
 
-                if abs(check - B) < THRESHOLD:
-                    check *= random.randrange(0, 1000) / 100
+                # if abs(check - B) < THRESHOLD:
+                #     check *= random.randrange(0, 1000) / 100
                     
                 if check > B:
                     return [action, check]
@@ -117,8 +120,8 @@ class LimitedAlphaBetaAgent(Agent):
                 if check < output[1]:
                     output = [action, check]
 
-                if abs(check - A) < THRESHOLD:
-                    check *= random.randrange(0, 1000) / 100
+                # if abs(check - A) < THRESHOLD:
+                #     check *= random.randrange(0, 1000) / 100
                     
                 if check < A:
                     return [action, check]

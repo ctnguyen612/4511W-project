@@ -431,12 +431,11 @@ def run_games(first_agent, second_agent, first_agent_turn, num_games, update_par
 
             if game_state.is_first_agent_win():
                 results['control'] += 1
+                results['individual'].append(player_moves['AlphaBetaAgent'])
             elif game_state.is_second_agent_win():
                 results['test'] += 1
             else:
                 results['draw'] += 1
-
-            results['individual'].append(max(player_moves[type(first_agent).__name__], player_moves[type(next_agent).__name__]))
 
             if (i+1) % TEST_FREQ == 0:
 
@@ -493,14 +492,28 @@ if __name__ == '__main__':
 
     run_games(**args, results=results)
 
-    control_rate = float(results['control']) / len(results['individual'])
-    test_rate = float(results['test']) / len(results['individual'])
-    draw_rate = float(results['draw']) / len(results['individual'])
-    avg_num_moves = sum(results['individual']) / len(results['individual'])
+    control_rate = float(results['control']) / NUM_GAMES
+    test_rate = float(results['test']) / NUM_GAMES
+    draw_rate = float(results['draw']) / NUM_GAMES
+    # avg_num_moves = sum(results['individual']) / len(results['individual'])
+
+    print('\n')
+    print('\n')
 
     print(f'----------rates at depth {TEST_DEPTHS[0]} with threshold {THRESHOLD}:')
     print(f'control: {control_rate}')
     print(f'test: {test_rate}')
     print(f'draw: {draw_rate}')
-    print(f'# moves to win: {avg_num_moves}')
+
+    print('\n')
+
+    print('winner\t\ttotal num moves')
+    print('-------------------------------------------------------------------------------------------------------')
+    # for result in results['individual']:
+    #     if result[0] != 'draw':
+    #         winner = result[0]
+    #         multipliers = result[1][winner]['multipliers']
+    #         num_moves = result[1][winner]['total']
+    #         print(f'{winner}\t\t{len(multipliers)}\t\t\t{num_moves}\t\t\t{multipliers}')
+
     print(time.time() - start_time)
